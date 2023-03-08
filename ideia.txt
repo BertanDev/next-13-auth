@@ -1,0 +1,40 @@
+Crie um aplicativo de lista de tarefas (To-do List) com funcionalidades CRUD (Create, Read, Update e Delete). 
+O aplicativo deve permitir que os usuários criem tarefas com um título, descrição e data de vencimento. 
+Os usuários devem ser capazes de visualizar uma lista de tarefas com todas as suas tarefas, 
+bem como filtrar as tarefas por status (concluídas ou pendentes) e data de vencimento.
+
+Além disso, você pode adicionar recursos extras, como notificações por e-mail ou push para 
+lembrar aos usuários sobre tarefas vencidas ou em andamento, autenticação de usuários para permitir 
+que cada usuário tenha sua própria lista de tarefas, e um recurso de pesquisa para permitir 
+que os usuários encontrem rapidamente tarefas específicas.
+
+Para implementar este projeto, você pode usar o Node.js para criar uma API RESTful 
+que se comunica com um banco de dados como MongoDB. Em seguida, você pode usar o React 
+para criar a interface do usuário (UI), permitindo que os usuários interajam com o aplicativo 
+e exibam e gerenciem suas tarefas.
+
+----------------------------------------------------------------------------------------------------------------------
+
+Use um design minimalista: Tente manter a interface simples e limpa, com poucos elementos visuais. 
+Use cores sólidas, em vez de muitos gradientes ou imagens. Isso tornará o aplicativo mais fácil de usar e mais agradável visualmente.
+
+Escolha uma paleta de cores atraente: Escolha cores que combinem bem e criem uma aparência geral agradável. 
+Você pode usar ferramentas online, como Adobe Color ou Coolors, para ajudá-lo a escolher uma paleta de cores que funcione para você.
+
+Use fontes legíveis: Escolha fontes legíveis que sejam fáceis de ler em diferentes tamanhos e dispositivos. 
+Você pode usar fontes gratuitas do Google Fonts ou do Typekit.
+
+Crie uma interface responsiva: Certifique-se de que o aplicativo funcione bem em diferentes tamanhos de tela, 
+para que os usuários possam usar o aplicativo em seus smartphones, tablets e desktops.
+
+Adicione ícones e ilustrações: Os ícones e ilustrações podem ajudar a tornar o aplicativo mais visualmente 
+atraente e ajudar a explicar a funcionalidade do aplicativo. Você pode usar recursos como o Font Awesome para obter ícones e o Unsplash para imagens.
+
+Use animações sutis: As animações sutis podem ajudar a tornar o aplicativo mais interativo e agradável para os usuários. 
+Você pode usar bibliotecas de animação como o React Spring ou o Framer Motion.
+
+Teste a usabilidade: Por fim, lembre-se de testar o aplicativo com usuários reais para ver se a interface é fácil de usar e entender.
+Você pode usar ferramentas como o UserTesting ou o Testbirds para realizar testes de usabilidade.
+
+email: ToTaskDolist@gmail.com
+senha: tasktestapp
