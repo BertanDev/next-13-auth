@@ -15,6 +15,8 @@ async function AuthMiddleware(
 
   const [, authToken] = authTokenHeaders.split(' ')
 
+  console.log(authToken)
+
   try {
     const decoded = verify(authToken, process.env.JWT_SECRET as string) as {
       sub: string

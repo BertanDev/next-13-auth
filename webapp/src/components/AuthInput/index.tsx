@@ -37,7 +37,10 @@ export function AuthInput({
           onChange={onChange}
           placeholder={placeholder}
         />
-        <InputEyeFix onClick={() => setPasswordVisible(!passwordVisible)}>
+        <InputEyeFix
+          onClick={() => setPasswordVisible(!passwordVisible)}
+          type="button"
+        >
           {isPasswordInput ? (
             passwordVisible ? (
               <EyeClosed size={24} fill="bold" />

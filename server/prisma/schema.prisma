@@ -21,5 +21,7 @@ model User {
 
   remember_me_uuid String?
 
+  recover_password_code String?
+
   @@map("users")
 }

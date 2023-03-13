@@ -1,6 +1,9 @@
 'use client'
+import PrivateRoute from '@/components/PrivateRoute'
 import GlobalStyle from '@/styles/globalStyles'
 import { theme } from '@/styles/theme'
+import { checkIsPublicRoute } from '@/utils/check-is-public-route'
+import { usePathname } from 'next/navigation'
 import React from 'react'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -16,15 +19,21 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const currentPathname = usePathname()
+
+  const isPublicPage = checkIsPublicRoute(currentPathname)
+
   return (
     <>
       <ThemeProvider theme={theme}>
         <GlobalStyle />
         <html lang="en">
           <body>
-            {children}
             <div>
               <ToastContainer autoClose={3000} />
+              {isPublicPage && children}
+
+              {!isPublicPage && <PrivateRoute>{children}</PrivateRoute>}
             </div>
           </body>
         </html>

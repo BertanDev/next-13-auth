@@ -9,8 +9,8 @@ import { prisma } from '../../lib/prisma/prisma-config'
 import nodemalier from 'nodemailer'
 import { randomUUID } from 'crypto'
 import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
-import { AuthMiddleware } from '../../middlewares/AuthMiddleware'
+import jwt, { verify } from 'jsonwebtoken'
+// import { AuthMiddleware } from '../../middlewares/AuthMiddleware'
 
 async function AuthRoutes(
   fastify: FastifyInstance,
@@ -154,8 +154,6 @@ async function AuthRoutes(
     ) => {
       const { email, password, rememberMe } = request.body
 
-      console.log(request.body)
-
       // Verify Email
       const userAlready = await prisma.user.findFirst({
         where: {
@@ -175,8 +173,10 @@ async function AuthRoutes(
         return
       }
 
+      let authTokenRemember
+
       if (rememberMe) {
-        const authTokenRemember = randomUUID()
+        authTokenRemember = randomUUID()
 
         await prisma.user.update({
           where: {
@@ -202,18 +202,192 @@ async function AuthRoutes(
       reply.status(200).send({
         user_id: userAlready.id,
         auth_user_token: authToken,
+        user_token_remember: authTokenRemember,
       })
     },
   )
 
   // Verify Remember-me
-  fastify.get(
+  fastify.post(
     '/user-verify-auth-token',
-    { preValidation: AuthMiddleware },
-    async (request, reply) => {
-      const userId = request.user_id
+    async (
+      request: FastifyRequest<{ Body: { authTokenRemember: string } }>,
+      reply,
+    ) => {
+      const { authTokenRemember } = request.body
 
-      reply.status(200).send({ userId })
+      const userWithRememberToken = await prisma.user.findFirst({
+        where: {
+          remember_me_uuid: authTokenRemember,
+        },
+      })
+
+      if (!userWithRememberToken) {
+        reply.status(401).send({ error: 'Token not found' })
+        return
+      }
+
+      const authToken = jwt.sign(
+        {
+          name: userWithRememberToken.name,
+          email: userWithRememberToken.email,
+        },
+        process.env.JWT_SECRET as string,
+        {
+          subject: userWithRememberToken.id,
+        },
+      )
+
+      reply.status(200).send({ auth_user_token: authToken })
+    },
+  )
+
+  // Protect route
+  fastify.post(
+    '/user-verify-protected-routes',
+    async (request: FastifyRequest, reply) => {
+      const { sessionAuthCookieBody } = request.body
+
+      const decodedCookieBody = verify(
+        sessionAuthCookieBody,
+        process.env.JWT_SECRET as string,
+      ) as {
+        sub: string
+      }
+
+      const authTokenHeaders = request.headers.authorization
+
+      const [, authToken] = authTokenHeaders.split(' ')
+
+      const decodedCookieHeader = verify(
+        authToken,
+        process.env.JWT_SECRET as string,
+      ) as {
+        sub: string
+      }
+
+      if (decodedCookieBody.sub === decodedCookieHeader.sub) {
+        reply.status(200).send({ message: 'User is logged in' })
+      } else {
+        reply.status(401).send({ message: 'Token not found' })
+      }
+    },
+  )
+
+  // Verify Email for recover password
+  fastify.post(
+    '/recover-password-email',
+    async (
+      request: FastifyRequest<{
+        Body: { email: string }
+      }>,
+      reply: FastifyReply,
+    ) => {
+      const { email: userEmail } = request.body
+
+      const userEmailSchema = z.object({
+        userEmail: z.string().email(),
+      })
+
+      const resultUserEmailSchema = userEmailSchema.safeParse({ userEmail })
+
+      if (resultUserEmailSchema.success === false) {
+        reply
+          .status(422)
+          .send({ error: 'Ivalid Email', more: resultUserEmailSchema })
+        return
+      }
+
+      const existingUserWithThisEmail = await prisma.user.findFirst({
+        where: {
+          email: userEmail,
+        },
+      })
+
+      if (!existingUserWithThisEmail) {
+        reply.status(404).send({ error: 'Email not registered' })
+        return
+      }
+
+      const transporter = nodemalier.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_APP,
+          pass: process.env.PASSWORD_EMAIL_APP,
+        },
+      })
+
+      function generateRecoverPasswordCode() {
+        let codigo = ''
+        const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        for (let i = 0; i < 6; i++) {
+          codigo += caracteres.charAt(
+            Math.floor(Math.random() * caracteres.length),
+          )
+        }
+        return codigo
+      }
+
+      const recoverPasswordCode = generateRecoverPasswordCode()
+
+      const mailOptions = {
+        from: process.env.EMAIL_APP,
+        to: userEmail,
+        subject: 'Verification code to recover your account in Task List app',
+        text: `Your code is ${recoverPasswordCode}`,
+      }
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          reply
+            .status(500)
+            .send({ error: 'Internal error, please try again later' })
+        }
+      })
+
+      await prisma.user.update({
+        where: {
+          email: userEmail,
+        },
+        data: {
+          recover_password_code: recoverPasswordCode,
+        },
+      })
+
+      reply.status(200).send({ message: 'Generated recovery code' })
+    },
+  )
+
+  // Verify Code for recover password
+  fastify.post(
+    '/recover-password-code',
+    async (
+      request: FastifyRequest<{ Body: { code: string; email: string } }>,
+      reply: FastifyReply,
+    ) => {
+      const { code: verifyCode, email: userEmail } = request.body
+
+      const existingCodeWithThisEmail = await prisma.user.findFirst({
+        where: {
+          AND: [{ recover_password_code: verifyCode }, { email: userEmail }],
+        },
+      })
+
+      if (!existingCodeWithThisEmail) {
+        reply.status(404).send({ error: 'Code not found' })
+        return
+      }
+
+      await prisma.user.update({
+        where: {
+          id: existingCodeWithThisEmail.id,
+        },
+        data: {
+          recover_password_code: null,
+        },
+      })
+
+      reply.status(200).send({ message: 'Code is valid for this Email' })
     },
   )
 }

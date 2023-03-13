@@ -35,10 +35,16 @@ export default function LoginSession() {
       })
       .then((response) => {
         if (isRemember) {
-          Cookies.set('authTokenRemember', response.data.auth_user_token)
+          Cookies.set('authTokenRemember', response.data.user_token_remember, {
+            expires: 60,
+          })
         }
 
         appServerApi.defaults.headers.common.Authorization = `Bearer ${response.data.auth_user_token}`
+
+        Cookies.set('authTokenSession', response.data.auth_user_token, {
+          path: '/',
+        })
 
         router.push('/user-content/dashboard')
       })
@@ -87,12 +93,18 @@ export default function LoginSession() {
             <label htmlFor="checkbox-remember">remember me</label>
           </CheckBoxContainer>
 
-          <ForgotPasswordButton>Forgot password?</ForgotPasswordButton>
+          <ForgotPasswordButton
+            type="button"
+            onClick={() => router.push('/auth-content/recover-password')}
+          >
+            Forgot password?
+          </ForgotPasswordButton>
         </AuxiliaryLogin>
 
         <AuthButton type="submit">LOGIN</AuthButton>
 
         <CreateNewAccount
+          type="button"
           onClick={() => router.push('/auth-content/create-account')}
         >
           create a new account
