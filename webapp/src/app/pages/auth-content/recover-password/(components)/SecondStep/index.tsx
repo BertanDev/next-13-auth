@@ -18,10 +18,15 @@ import {
 
 interface SecondStepProps {
   prossStep: Dispatch<SetStateAction<number>>
+  alterCurrentUserEmail: Dispatch<SetStateAction<string>>
   currentUserEmail: string
 }
 
-export function SecondStep({ prossStep, currentUserEmail }: SecondStepProps) {
+export function SecondStep({
+  prossStep,
+  currentUserEmail,
+  alterCurrentUserEmail,
+}: SecondStepProps) {
   const [inputValues, setInputValues] = useState(['', '', '', '', '', ''])
   const inputRefs = useRef<Array<HTMLInputElement | null>>([])
 
@@ -60,6 +65,7 @@ export function SecondStep({ prossStep, currentUserEmail }: SecondStepProps) {
         email: currentUserEmail,
       })
       .then((response) => {
+        alterCurrentUserEmail(currentUserEmail)
         prossStep(3)
         setLoading(false)
       })

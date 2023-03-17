@@ -20,6 +20,7 @@ export default function RecoverPassword() {
         <SecondStep
           prossStep={setStepRecoverPassword}
           currentUserEmail={currentEmail}
+          alterCurrentUserEmail={setCurrentEmail}
         />
       )}
 

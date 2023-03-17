@@ -1,7 +1,10 @@
+import appServerApi from '@/api/axios/appServerApi'
 import { AuthButton } from '@/components/AuthButton'
 import { AuthInput } from '@/components/AuthInput'
+import { useRouter } from 'next/navigation'
 import { LockKey } from 'phosphor-react'
 import { Dispatch, FormEvent, SetStateAction, useState } from 'react'
+import { toast } from 'react-toastify'
 import {
   ActionsSession,
   TextError,
@@ -12,11 +15,16 @@ import {
 
 interface ThirdStepProps {
   prossStep: Dispatch<SetStateAction<number>>
+  currentUserEmail: string
 }
 
-export function ThirdStep({ prossStep }: ThirdStepProps) {
+export function ThirdStep({ prossStep, currentUserEmail }: ThirdStepProps) {
   const [userNewPassword, setUserNewPassword] = useState('')
   const [userNewPasswordConfirm, setUserNewPasswordConfirm] = useState('')
+
+  const [loading, setLoading] = useState(false)
+
+  const router = useRouter()
 
   function verifyErrors() {
     if (userNewPassword.length < 8 || userNewPassword.length > 30) {
@@ -38,11 +46,27 @@ export function ThirdStep({ prossStep }: ThirdStepProps) {
   async function handleRevocerPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    setLoading(true)
     if (verifyErrors()) {
+      setLoading(false)
       return
     }
 
-    console.log('foi')
+    await appServerApi
+      .post('/content-auth/recover-password-new', {
+        newUserPassword: userNewPassword,
+        userEmail: currentUserEmail,
+      })
+      .then((response) => {
+        toast.success('Password reset')
+        setLoading(false)
+        router.push('/auth-content/login-session')
+      })
+      .catch((response) => {
+        toast.error('Error resetting password')
+        setLoading(false)
+        router.push('/auth-content/login-session')
+      })
   }
 
   return (
@@ -68,7 +92,9 @@ export function ThirdStep({ prossStep }: ThirdStepProps) {
             isPasswordInput
           />
           <TextError>{verifyErrors()}</TextError>
-          <AuthButton>SUBMIT</AuthButton>
+          <AuthButton isLoading={loading}>
+            {loading ? 'Loading...' : 'SUBMIT'}
+          </AuthButton>
         </ActionsSession>
       </ThirdStepContent>
     </ThirdStepContainer>

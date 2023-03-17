@@ -9,7 +9,7 @@ import { prisma } from '../../lib/prisma/prisma-config'
 import nodemalier from 'nodemailer'
 import { randomUUID } from 'crypto'
 import bcrypt from 'bcrypt'
-import jwt, { verify } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 // import { AuthMiddleware } from '../../middlewares/AuthMiddleware'
 
 async function AuthRoutes(
@@ -243,36 +243,36 @@ async function AuthRoutes(
   )
 
   // Protect route
-  fastify.post(
-    '/user-verify-protected-routes',
-    async (request: FastifyRequest, reply) => {
-      const { sessionAuthCookieBody } = request.body
+  // fastify.post(
+  //   '/user-verify-protected-routes',
+  //   async (request: FastifyRequest, reply) => {
+  //     const { sessionAuthCookieBody } = request.body
 
-      const decodedCookieBody = verify(
-        sessionAuthCookieBody,
-        process.env.JWT_SECRET as string,
-      ) as {
-        sub: string
-      }
+  //     const decodedCookieBody = verify(
+  //       sessionAuthCookieBody,
+  //       process.env.JWT_SECRET as string,
+  //     ) as {
+  //       sub: string
+  //     }
 
-      const authTokenHeaders = request.headers.authorization
+  //     const authTokenHeaders = request.headers.authorization
 
-      const [, authToken] = authTokenHeaders.split(' ')
+  //     const [, authToken] = authTokenHeaders.split(' ')
 
-      const decodedCookieHeader = verify(
-        authToken,
-        process.env.JWT_SECRET as string,
-      ) as {
-        sub: string
-      }
+  //     const decodedCookieHeader = verify(
+  //       authToken,
+  //       process.env.JWT_SECRET as string,
+  //     ) as {
+  //       sub: string
+  //     }
 
-      if (decodedCookieBody.sub === decodedCookieHeader.sub) {
-        reply.status(200).send({ message: 'User is logged in' })
-      } else {
-        reply.status(401).send({ message: 'Token not found' })
-      }
-    },
-  )
+  //     if (decodedCookieBody.sub === decodedCookieHeader.sub) {
+  //       reply.status(200).send({ message: 'User is logged in' })
+  //     } else {
+  //       reply.status(401).send({ message: 'Token not found' })
+  //     }
+  //   },
+  // )
 
   // Verify Email for recover password
   fastify.post(
@@ -388,6 +388,45 @@ async function AuthRoutes(
       })
 
       reply.status(200).send({ message: 'Code is valid for this Email' })
+    },
+  )
+
+  fastify.post(
+    '/recover-password-new',
+    async (
+      request: FastifyRequest<{
+        Body: { newUserPassword: string; userEmail: string }
+      }>,
+      reply: FastifyReply,
+    ) => {
+      const { newUserPassword, userEmail } = request.body
+
+      const user = await prisma.user.findFirst({
+        where: {
+          email: userEmail,
+        },
+        select: {
+          id: true,
+        },
+      })
+
+      if (!user) {
+        reply.status(404).send({ error: 'Error resetting password' })
+        return
+      }
+
+      const hashedPassword = await bcrypt.hash(newUserPassword, 14)
+
+      await prisma.user.update({
+        data: {
+          password: hashedPassword,
+        },
+        where: {
+          id: user.id,
+        },
+      })
+
+      reply.status(200).send({ message: 'Successfully reset password' })
     },
   )
 }
