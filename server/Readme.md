@@ -21,6 +21,12 @@ com a aplicação em sua máquina e a api em funcionamento, rode na raíz:
 npm install
 ```
 
+criar o banco de dados:
+
+```
+npx prisma migrate dev --name init
+```
+
 em seguida:
 
 ```
